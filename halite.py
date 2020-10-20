@@ -156,6 +156,8 @@ def policy_loss(epoch_hist, idxs, network = network_ship):
 def critic_loss(epoch_hist, idxs):
 
     values = values_new = network_critic(state)
+    if network_critic.inputs == False:
+        network_ship._set_inputs(values)
     rets = np.array(epoch_hist['rets'])[idxs]
     v_loss = 0.5 * tf.reduce_mean(tf.square(rets - values))
 
@@ -193,7 +195,9 @@ for epoch in range(epochs):
         for ship in board.current_player.ships[0:1]:
             # ship = board.ships['0-1']
             pos = ship.position
-            ships_state = relative_state(state, pos, size)
+            ships_state = relative_state(board, state, pos, size)
+            if network_ship.inputs == False:
+                network_ship._set_inputs(ships_state)
             logits = network_ship(ships_state)
             int_action_ship = eps_greedy(eps, logits) # if step > 0 else 1
             cur_halite += ship._halite
@@ -277,11 +281,12 @@ for epoch in range(epochs):
             grads, grad_norm = tf.clip_by_global_norm(grads, 0.5)               # clip gradients for slight updates
             optim.apply_gradients(zip(grads, weights))
             # tape.reset()
-    if epoch % 10 == 0:
-        network_ship.save('//actor')
-        network_critic.save('//critic')
+    # if epoch % 10 == 0:
+    #     network_ship.inputs
+    #     network_ship.save('//actor')
+    #     network_critic.save('//critic')
 
     plot_rews.append(np.sum(epoch_hist['rews']))
 
-plot(plot_rews);
+plot(plot_rews)
 
